@@ -1,24 +1,76 @@
 #include <string>
+#include <deque>
+#include <iostream>
+#include <algorithm>
+
 #include "test_runner.h"
 using namespace std;
 
 class Editor {
  public:
   // Реализуйте конструктор по умолчанию и объявленные методы
-  Editor();
-  void Left();
-  void Right();
-  void Insert(char token);
-  void Cut(size_t tokens = 1);
-  void Copy(size_t tokens = 1);
-  void Paste();
-  string GetText() const;
+  Editor() : pos(0) {}
+  void Left() {
+	  if(pos > 0) {
+		  --pos;
+	  }
+  }
+  void Right() {
+	  if(pos < data.size()) {
+		  ++pos;
+	  }
+  }
+  void Insert(char token) {
+	  data.insert(next(data.begin(), pos), token);
+	  ++pos;
+  }
+  void Cut(size_t tokens = 1) {
+	  size_t sz = CopyImpl(tokens);
+	  data.erase(data.begin() + pos -1, data.begin() + pos -1 + sz);
+  }
+  void Copy(size_t tokens = 1) {
+	  CopyImpl(tokens);
+  }
+  void Paste() {
+	  data.insert(buf.begin(), buf.end(), data.begin() + pos -1);
+  }
+  string GetText() const { return string(data.begin(), data.end()); }
+private:
+  size_t CopyImpl(size_t tokens) {
+	  if(tokens == 0) {
+		  buf.clear();
+		  return 0;
+	  } else {
+		  size_t sz = min(tokens, data.size() - pos +1);
+		  buf.resize(sz);
+		  copy(data.begin() + pos -1, data.begin() + pos -1 + sz, buf.begin());
+		  return sz;
+	  }
+  }
+
+  int pos;
+  deque<char> data;
+  deque<char> buf;
 };
 
 void TypeText(Editor& editor, const string& text) {
   for(char c : text) {
     editor.Insert(c);
   }
+}
+
+void TestSimple() {
+	Editor editor;
+	TypeText(editor, "simple text");
+
+	editor.Left();
+	editor.Left();
+	editor.Left();
+	editor.Left();
+	editor.Cut(3);
+	editor.Right();
+	editor.Paste();
+	cout << editor.GetText();
 }
 
 void TestEditing() {
@@ -106,6 +158,7 @@ void TestEmptyBuffer() {
 
 int main() {
   TestRunner tr;
+  RUN_TEST(tr, TestSimple);
   RUN_TEST(tr, TestEditing);
   RUN_TEST(tr, TestReverse);
   RUN_TEST(tr, TestNoText);
