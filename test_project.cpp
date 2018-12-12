@@ -2,75 +2,78 @@
 #include <deque>
 #include <iostream>
 #include <algorithm>
+#include <list>
 
 #include "test_runner.h"
 using namespace std;
 
 class Editor {
  public:
-  // Реализуйте конструктор по умолчанию и объявленные методы
-  Editor() : pos(0) {}
+  Editor() {
+	  pos = data.begin();
+  }
+
   void Left() {
-	  if(pos > 0) {
-		  --pos;
-	  }
-  }
-  void Right() {
-	  if(pos < data.size()) {
-		  ++pos;
-	  }
-  }
-  void Insert(char token) {
-	  data.insert(next(data.begin(), pos), token);
-	  ++pos;
-  }
-  void Cut(size_t tokens = 1) {
-	  size_t sz = CopyImpl(tokens);
-	  data.erase(data.begin() + pos -1, data.begin() + pos -1 + sz);
-  }
-  void Copy(size_t tokens = 1) {
-	  CopyImpl(tokens);
-  }
-  void Paste() {
-	  data.insert(buf.begin(), buf.end(), data.begin() + pos -1);
-  }
-  string GetText() const { return string(data.begin(), data.end()); }
-private:
-  size_t CopyImpl(size_t tokens) {
-	  if(tokens == 0) {
-		  buf.clear();
-		  return 0;
-	  } else {
-		  size_t sz = min(tokens, data.size() - pos +1);
-		  buf.resize(sz);
-		  copy(data.begin() + pos -1, data.begin() + pos -1 + sz, buf.begin());
-		  return sz;
+	  if(pos != data.begin()) {
+		  pos = prev(pos);
 	  }
   }
 
-  int pos;
-  deque<char> data;
-  deque<char> buf;
+  void Right() {
+	  if(pos != data.end()) {
+		  pos = next(pos);
+	  }
+  }
+
+  void Insert(char token) {
+	  auto it = data.insert(pos, token);
+	  pos = next(it);
+  }
+
+  void Cut(size_t tokens = 1) {
+	  buf.clear();
+	  buf.splice(buf.begin(), data, pos, next(pos, tokens));
+  }
+
+  void Copy(size_t tokens = 1) {
+	  buf.clear();
+	  copy(pos, next(pos, tokens), buf.begin());
+  }
+
+  void Paste() {
+	  data.insert(buf.begin(), buf.end(), pos);
+	  pos = next(pos, buf.size());
+  }
+
+  string GetText() const { return string(data.begin(), data.end()); }
+private:
+  list<char>::iterator pos;
+  list<char> data;
+  list<char> buf;
 };
 
 void TypeText(Editor& editor, const string& text) {
   for(char c : text) {
     editor.Insert(c);
+    cout << editor.GetText() << endl;
   }
 }
 
 void TestSimple() {
 	Editor editor;
 	TypeText(editor, "simple text");
+	cout << editor.GetText() << endl;
 
 	editor.Left();
 	editor.Left();
 	editor.Left();
 	editor.Left();
+	editor.Copy();
 	editor.Cut(3);
+	cout << editor.GetText() << endl;
 	editor.Right();
 	editor.Paste();
-	cout << editor.GetText();
+	cout << editor.GetText() << endl;
 }
 
 void TestEditing() {
