@@ -32,17 +32,21 @@ class Editor {
 
   void Cut(size_t tokens = 1) {
 	  buf.clear();
-	  buf.splice(buf.begin(), data, pos, next(pos, tokens));
+      auto dist = distance(data.begin(), pos);
+      size_t sz = min(tokens, data.size() - dist);
+	  buf.splice(buf.begin(), data, pos, next(pos, sz));
+      pos = next(data.begin(), dist);
   }
 
   void Copy(size_t tokens = 1) {
-	  buf.clear();
-	  copy(pos, next(pos, tokens), buf.begin());
+      buf.resize(tokens);
+	  auto it = copy(pos, next(pos, tokens), buf.begin());
+      buf.erase(it, buf.end());
   }
 
   void Paste() {
-	  data.insert(buf.begin(), buf.end(), pos);
-	  pos = next(pos, buf.size());
+	  auto it = data.insert(pos, buf.begin(), buf.end());
+	  pos = next(it, buf.size());
   }
 
   string GetText() const { return string(data.begin(), data.end()); }
@@ -55,14 +59,12 @@ private:
 void TypeText(Editor& editor, const string& text) {
   for(char c : text) {
     editor.Insert(c);
-    cout << editor.GetText() << endl;
   }
 }
 
 void TestSimple() {
 	Editor editor;
 	TypeText(editor, "simple text");
-	cout << editor.GetText() << endl;
 
 	editor.Left();
 	editor.Left();
@@ -70,10 +72,9 @@ void TestSimple() {
 	editor.Left();
 	editor.Copy();
 	editor.Cut(3);
-	cout << editor.GetText() << endl;
 	editor.Right();
 	editor.Paste();
-	cout << editor.GetText() << endl;
+    ASSERT_EQUAL(editor.GetText(), "simple ttex");
 }
 
 void TestEditing() {
