@@ -119,6 +119,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="solution.cpp" />
     <ClCompile Include="test_project.cpp" />
   </ItemGroup>
   <ItemGroup>
